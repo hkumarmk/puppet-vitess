@@ -39,4 +39,19 @@ make build',
     refreshonly => true,
   }
 
+  ##
+  # create user vitess, create data directory
+  ##
+  user {'vitess':
+    ensure => present,
+    home   => '/var/lib/vitess',
+    shell  => '/bin/bash',
+  }
+ 
+  file { '/var/lib/vitess':
+    ensure  => directory,
+    owner   => 'vitess',
+    require => User['vitess'],
+  }
+
 }
