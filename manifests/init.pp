@@ -6,12 +6,15 @@
 class vitess {
 
   ##
+  # TODO: most of the code here will be removed after making a package.
   # Install all prerequisite packages
   ##
-  ensure_packages ( ['make', 'automake', 'libtool' ,'memcached' ,'python-dev' ,
+  $prereq_packages = ['make', 'automake', 'libtool' ,'memcached' ,'python-dev' ,
                       'libssl-dev','g++','mercurial','golang',
                       'libmariadbclient-dev','git' ,'pkg-config' ,'bison',
-                      'curl','libzookeeper-mt-dev'] )
+                      'curl','libzookeeper-mt-dev']
+
+  ensure_packages($prereq_packages)
 
   vcsrepo { '/usr/local/src/github.com/youtube/vitess' :
     ensure   => present,
@@ -28,6 +31,7 @@ export MYSQL_FLAVOR=MariaDB
 make build',
     mode    => '755',
     notify  => Exec['install_vitess'],
+    require => Package[$prereq_packages],
   }
 
   exec { 'install_vitess':
