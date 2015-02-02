@@ -13,7 +13,7 @@ class vitess::install {
     ensure => present,
   }
 
-  ensure_packages ( ['make', 'automake', 'libtool' ,'memcached' ,'python-dev' ,'libssl-dev' ,'g++' ,'mercurial' 
+  ensure_packages ( ['make', 'automake', 'libtool' ,'memcached' ,'python-dev' ,'libssl-dev' ,'g++' ,'mercurial'
                       ,'git' ,'pkg-config' ,'bison' ,'curl','libzookeeper-mt-dev'] )
 
   vcsrepo { '/usr/local/src/github.com/youtube/vitess' :
@@ -47,11 +47,22 @@ make build',
     home   => '/var/lib/vitess',
     shell  => '/bin/bash',
   }
- 
+
   file { '/var/lib/vitess':
     ensure  => directory,
     owner   => 'vitess',
     require => User['vitess'],
+  }
+
+  file { '/var/log/vitess':
+    ensure  => directory,
+    owner   => 'vitess',
+    require => User['vitess'],
+  }
+
+  file { '/etc/init/vtctld.conf':
+    ensure => file,
+    source => "puppet:///modules/${module_name}/init/vtctld.conf",
   }
 
 }
