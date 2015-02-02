@@ -1,0 +1,4 @@
+{
+  "test": "<%= @zk_hosts.map{ |ip| "#{ip}:#{@zk_port}" }.join(',') %>",
+  "global": "<%= @zk_hosts.map{ |ip| "#{ip}:#{@zk_port}" }.join(',') %>"
+}
