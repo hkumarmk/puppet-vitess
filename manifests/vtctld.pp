@@ -8,15 +8,6 @@ class vitess::vtctld (
   $zk_port = 2181,
 ) {
 
-  ##
-  # zk-client-conf.json - zookeeper client configuration
-  ##
-  file {'/etc/vitess/zk-client-conf.json':
-    ensure  => file,
-    content => template("${module_name}/zk-client-conf.json.erb"),
-    notify  => Service['vtctld']
-  }
-
   file { '/etc/init/vtctld.conf':
     ensure => file,
     source => "puppet:///modules/${module_name}/init/vtctld.conf",

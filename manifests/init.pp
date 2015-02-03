@@ -3,16 +3,21 @@
 #   Setup vitess
 #
 
-class vitess {
+class vitess (
+  $zk_hosts = ['localhost'],
+  $zk_port = 21811,
+) {
 
   ##
   # TODO: most of the code here will be removed after making a package.
   # Install all prerequisite packages
   ##
-  $prereq_packages = ['make', 'automake', 'libtool' ,'memcached' ,'python-dev' ,
+  $prereq_packages = ['mariadb-server','make', 'automake', 'libtool' ,'memcached' ,'python-dev' ,
                       'libssl-dev','g++','mercurial','golang',
                       'libmariadbclient-dev','git' ,'pkg-config' ,'bison',
                       'curl','libzookeeper-mt-dev']
+
+  include java
 
   ensure_packages($prereq_packages)
 
@@ -62,6 +67,19 @@ make build',
   }
 
   ##
+  # zk-client-conf.json - zookeeper client configuration
+  ##
+  file {'/etc/zookeeper':
+    ensure => directory,
+  }
+
+  file {'/etc/zookeeper/zk_client.json':
+    ensure  => file,
+    content => template("${module_name}/zk-client-conf.json.erb"),
+    require => File['/etc/zookeeper'],
+  }
+
+  ##
   # Base config directory
   ##
   file {'/etc/vitess/':
@@ -71,4 +89,29 @@ make build',
   file {'/usr/local/share/vitess':
     ensure => directory,
   }
+
+  ##
+  # For some reason, the zookeeper version coming with ubuntu is not working
+  # with vitess, so had to use the version coming with vitess.
+  ##
+
+  file { '/etc/init/vtzk.conf':
+    ensure  => file,
+    source  => "puppet:///modules/${module_name}/init/vtzk.conf",
+  }
+
+  file { '/usr/local/bin/zkctl.sh':
+    ensure => file,
+    mode   => '0755',
+    source => "puppet:///modules/${module_name}/zkctl.sh",
+  }
+
+  service {'vtzk':
+    ensure  => running,
+    require => [ File['/etc/init/vtzk.conf'],
+                 File['/usr/local/bin/zkctl.sh'],
+                 Exec['install_vitess'],
+                 Class['java'] ],
+  }
+
 }
