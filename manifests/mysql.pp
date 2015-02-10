@@ -1,7 +1,9 @@
 #
 # Class vitess::mysql
 #
-class vitess::mysql {
+class vitess::mysql (
+  $keyspace = ['test_keyspace'],
+) {
 
   ##
   # Just a workaround for now, need to move to right manifests
@@ -23,6 +25,15 @@ class vitess::mysql {
 
   service {'mysql':
     ensure => running,
+  }
+
+  ##
+  # link mysql command to /usr/local - this is a workaround for now.
+  ##
+  file {'/usr/local/bin/mysql':
+    ensure  => link,
+    target  => '/usr/bin/mysql',
+    require => Package['mariadb-server'],
   }
 
   Service['mysql'] -> Mysql_user<||>
@@ -88,10 +99,27 @@ class vitess::mysql {
     table      => '*.*',
   }
 
-  mysql_database { 'vt_test_keyspace':
+  mysql_database { "vt_${keyspace}":
     ensure   => present,
     charset  => 'utf8',
     provider => 'mysql',
   }
 
+  mysql_database { '_vt':
+    ensure   => present,
+    charset  => 'utf8',
+    provider => 'mysql',
+  }
+
+  exec {'create_table__vt_replication_log':
+    command  => "mysql -e '
+      CREATE TABLE _vt.replication_log ( time_created_ns bigint primary key, note varchar(255));
+      CREATE TABLE _vt.reparent_log ( time_created_ns bigint primary key,
+        last_position varchar(255), new_addr varchar(255), new_position varchar(255),
+        wait_position varchar(255), index (last_position));'",
+    unless  => "mysql -e \"select count(*) from information_schema.tables where
+        (table_name='replication_log' or table_name='reparent_log') and
+        table_schema='_vt';\" | grep -v count | grep 2",
+    require => Mysql_database['_vt'],
+  }
 }
